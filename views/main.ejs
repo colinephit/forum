@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+
+<%- include("head", {title: 'Forum' }) %>
+
+  <body>
+    <div id="outer">
+      <%- include('navbar', {user: user, page_name: page_name }) %>
+        <main id="content">
+          <section id="primaryContentContainer">
+            <article id="primaryContent">
+              <div class="filters">
+                <form action="/questions/filter" method="GET" class="mb-3">
+                  <div class="input-group mb-3">
+                    <input type="text" name="query" class="form-control" placeholder="Search questions..."
+                      value="<%= typeof query !== 'undefined' ? query : '' %>" />
+                    <button type="submit" class="btn btn-outline-dark">Search</button>
+                  </div>
+
+                  <!-- Sort and Tags Filters (Side by Side) -->
+                  <div class="row">
+                    <!-- Sort Dropdown (Left Side) -->
+                    <div class="col-md-6">
+                      <label for="sort">Sort Questions</label>
+                      <select name="sort" class="form-select" aria-label="Sort Questions">
+                        <option value="recent" <%=typeof sort !=='undefined' && sort==='recent' ? 'selected' : '' %>
+                          >Sort
+                          by Most Recent</option>
+                        <option value="unanswered" <%=typeof sort !=='undefined' && sort==='unanswered' ? 'selected'
+                          : '' %>>Show Unanswered</option>
+                      </select>
+                    </div>
+
+                    <!-- Tag Input (Right Side) -->
+                    <div class="col-md-6">
+                      <label for="tagFilter">Filter by Tag(s)</label>
+                      <input type="text" class="form-control" name="tag" id="tagFilter"
+                        placeholder="Enter tag(s) separated by commas"
+                        value="<%= typeof tag !== 'undefined' ? tag : '' %>" />
+                    </div>
+                  </div>
+                </form>
+                <br />
+              </div>
+
+              <div id="questions-container"></div>
+
+            </article>
+          </section>
+          <%- include('sidebar'); %>
+        </main>
+    </div>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        fetchQuestions();
+      });
+
+      function parseJwt(token) {
+        return JSON.parse(atob(token.split(".")[1]));
+      }
+
+      async function fetchQuestions() {
+        const token = localStorage.getItem("accesstoken");
+        try {
+          const response = await fetch('/api/questions/all');
+          const questions = await response.json();
+
+          let userId = null;
+          if (token) {
+            try {
+              const decodedToken = parseJwt(token);
+              userId = decodedToken.userId; // Extract userId from JWT
+            } catch (err) {
+              console.error("Invalid token:", err);
+            }
+          }
+
+          displayQuestions(questions, userId);
+        } catch (error) {
+          console.error("Error fetching questions:", error);
+        }
+      }
+
+      function displayQuestions(questions, userId) {
+        const container = document.getElementById('questions-container');
+        container.innerHTML = ''; // Clear previous questions
+
+        questions.forEach(question => {
+          const hasUpvoted = question.votes?.some(vote => vote.userId === userId && vote.type === "upvote");
+          const hasDownvoted = question.votes?.some(vote => vote.userId === userId && vote.type === "downvote");
+          const questionCard = `
+            <div class="card mb-3" style="max-width: 740px">
+              <div class="row g-0">
+                <div class="col-md-2 d-flex flex-column align-items-center justify-content-center bg-light vote-section">
+                  <button class="btn ${hasUpvoted ? "btn-danger" : "btn-outline-danger"} btn-sm" 
+                    style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; padding: 0;" 
+                    onclick="vote('${question._id}', 'upvote')">
+                   <i class="bi bi-caret-up-fill fs-4"></i>
+                  </button>
+                  <span class="fw-bold mt-1 mb-1">${question.votecount}</span>
+                  <button class="btn ${hasDownvoted ? "btn-secondary" : "btn-outline-secondary"} btn-sm" 
+                    style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; padding: 0;" 
+                    onclick="vote('${question._id}', 'downvote')">
+                    <i class="bi bi-caret-down-fill fs-4"></i>
+                  </button>
+                </div>
+                <div class="col-md-10">
+                  <div class="card-body">
+                    <h5 class="card-title">
+                      <a href="/questions/${question._id}">${question.title}</a>
+                    </h5>
+                    <p class="card-text">${question.body}</p>
+                    <div class="card-text">
+                      ${question.tags.map(tag => `<span class="badge text-bg-dark me-1">${tag}</span>`).join('')}
+                    </div>
+                    <div class="question-details">
+                      <img width="50px" height="50px" src="${question.userDetails.profilePicture ? 'data:image/png;base64,' + question.userDetails.profilePicture : '/images/default.jpg'}" class="question-img"/>
+                      <div class="text-details">
+                        <p style="line-height: 1.1">
+                          <small class="text-body-secondary">
+                            Posted by <a href="/users/${question.userDetails._id}/profile"><strong>${question.userDetails.displayname}</strong></a>
+                            <br />on <strong>${question.formattedCreated}</strong>
+                          </small>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>`;
+          container.innerHTML += questionCard;
+        });
+      }
+
+      // Function to handle voting
+      async function vote(questionId, voteType) {
+        try {
+          const token = localStorage.getItem("accesstoken")
+          const response = await fetch(`/api/questions/vote/${questionId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ voteType }),
+          });
+
+          if (response.status === 401) {
+            window.location.href = "/users/login"; // Redirect to login page
+            return;
+          }
+
+          if (response.ok) {
+            fetchQuestions(); // Reload questions to update vote count
+          } else {
+            console.error("Voting failed");
+          }
+        } catch (error) {
+          console.error("Error:", error);
+        }
+      }
+
+    </script>
+
+  </body>
+
+</html>

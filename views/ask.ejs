@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+
+
+<body>
+  <div id="outer">
+    <%- include(navbar, {user: user}) %>
+      <main id="content">
+        <section id="primaryContentContainer">
+          <article id="primaryContent">
+            <!-- prettier-ignore -->
+            <% let formAction='/questions/add' ; let formLabel='Ask A Question' ; if (typeof _id !='undefined' ){
+              formAction=`/questions/${questionId}/edit`; formLabel='Edit Question' ; } %>
+              <%- include("head", {title: formLabel }) %>
+                <h2>
+                  <%= formLabel %>
+                </h2>
+                <form action="<%= formAction %>" method="POST">
+                  <div class="mb-3">
+                    <label for="title" class="form-label">Title</label>
+                    <input type="text" class="form-control" id="title" name="title"
+                      value="<%= typeof title != 'undefined' ? title : '' %>" required />
+                  </div>
+                  <div class="mb-3">
+                    <label for="body" class="form-label">Body</label>
+                    <textarea class="form-control" id="body" name="body" rows="5"
+                      required><%= typeof body !== 'undefined' ? body.trim() : '' %></textarea>
+
+                  </div>
+                  <div class="mb-3">
+                    <label for="tags" class="form-label">Tags (comma-separated)</label>
+                    <input type="text" class="form-control" id="tags" name="tags"
+                      value="<%= typeof tags != 'undefined' ? tags : '' %>" required />
+                    <small class="text-body-secondary">Add tags separated by commas.</small>
+                  </div>
+                  <button type="submit" class="btn btn-danger">Post Question</button>
+                </form>
+          </article>
+        </section>
+        <%- include('sidebar'); %>
+      </main>
+  </div>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      document.getElementById("title").focus();
+    });
+  </script>
+</body>
+
+</html>

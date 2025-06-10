@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+
+<%- include("head", {title: 'Profile' }) %>
+
+  <body>
+    <div id="outer">
+      <%- include('navbar', { user: currentuser }) %>
+
+        <main id="content">
+          <section id="primaryContentContainer">
+            <article id="primaryContent">
+              <h2>Profile</h2>
+              <div class="d-flex flex-column justify-content-center align-items-center">
+                <div class="card" style="width: 24rem;">
+                  <img
+                    src="<%= user.profilePicture ? 'data:image/png;base64,' + user.profilePicture : '/images/default.jpg' %>"
+                    class="card-img-top rounded-circle" alt="Profile Picture"
+                    style="width: 120px; height: 120px; object-fit: cover; margin: 20px auto;">
+
+                  <div class="card-body text-center">
+                    <h4 class="card-title">@<%= user.username %>
+                    </h4>
+                    <h5 class="text-muted">
+                      <%= user.displayname %>
+                    </h5>
+                    <p class="card-text">
+                      <%= user.email %>
+                    </p>
+                    <p class="card-text">
+                      <%= user.bio || 'No bio available.' %>
+                    </p>
+                  </div>
+                </div>
+
+                <% if (isOwnProfile) { %>
+                  <a href="/users/editProfile" class="btn btn-danger mt-2" style="width: 24rem;">Edit Profile</a>
+                  <% } %>
+              </div>
+            </article>
+          </section>
+
+          <%- include('sidebar') %>
+        </main>
+    </div>
+  </body>
+
+</html>

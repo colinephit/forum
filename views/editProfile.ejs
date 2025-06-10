@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+
+<%- include("head", {title: 'Edit Profile' }) %>
+
+  <body>
+    <div id="outer">
+      <%- include('navbar', { user: user }) %>
+
+        <main id="content">
+          <section id="primaryContentContainer">
+            <article id="primaryContent">
+
+              <h3>Edit Profile</h3>
+              <form action="/users/<%= user._id %>/update" method="POST" enctype="multipart/form-data">
+                <div class="mb-3">
+                  <label for="displayname" class="form-label">Display Name</label>
+                  <input type="text" class="form-control" id="displayname" name="displayname"
+                    value="<%= user.displayname %>" required>
+                </div>
+
+                <div class="mb-3">
+                  <label for="bio" class="form-label">Bio</label>
+                  <textarea class="form-control" id="bio" name="bio" rows="3"><%= user.bio || '' %></textarea>
+                </div>
+
+                <div class="mb-3">
+                  <label for="profilePic" class="form-label">Profile Picture</label>
+                  <input type="file" class="form-control" id="profilePic" name="profilePic" accept="image/*">
+                </div>
+
+                <button type="submit" class="btn btn-danger">Update Profile</button>
+              </form>
+
+            </article>
+          </section>
+
+          <%- include('sidebar') %>
+        </main>
+    </div>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        document.getElementById("displayname").focus();
+      });
+    </script>
+  </body>
+
+</html>

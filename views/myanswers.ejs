@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+
+<%- include("head", {title: 'My Answers' }) %>
+
+  <body>
+    <div id="outer">
+      <%- include('navbar', {user: user}) %>
+        <main id="content">
+          <section id="primaryContentContainer">
+            <article id="primaryContent">
+              <div id="answers-container"></div>
+            </article>
+          </section>
+          <%- include('sidebar'); %>
+        </main>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+      // Function to confirm delete action
+      function confirmDelete(event) {
+        if (!confirm("Are you sure you want to delete this answer? This action cannot be undone.")) {
+          event.preventDefault(); // Stop the form submission
+          return false;
+        }
+        return true; // Allow form submission if confirmed
+      }
+
+      // Function to handle voting
+      async function vote(answerId, voteType) {
+        try {
+          const token = localStorage.getItem("accesstoken")
+          const decodedToken = parseJwt(token);
+          const userId = decodedToken.userId; // Now this is assigned first
+          const response = await fetch(`/api/answers/vote/${answerId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ voteType }),
+          });
+
+          if (response.ok) {
+            fetchAnswers(); // Reload questions to update vote count
+          } else {
+            console.error("Voting failed");
+          }
+        } catch (error) {
+          console.error("Error:", error);
+        }
+      }
+      // Function to fetch answers for the logged-in user
+      function fetchAnswers() {
+        const token = localStorage.getItem("accesstoken");
+
+        if (!token) {
+          alert("You must be logged in to view your answers.");
+          return;
+        }
+
+        const decodedToken = parseJwt(token);
+        const userId = decodedToken.userId;
+
+        // Fetch answers via AJAX
+        $.ajax({
+          url: `/api/answers/user/${userId}`,
+          method: "GET",
+          dataType: "json",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          success: function (answers) {
+            if (answers.length === 0) {
+              $("#answers-container").html("<h2>You have not answered any questions yet. Let's get to it!</h2>");
+            } else {
+              let html = "<h2>My Answers</h2>";
+              answers.forEach(answer => {
+                const hasUpvoted = answer.votes?.some(vote => vote.userId === userId && vote.type === "upvote");
+                const hasDownvoted = answer.votes?.some(vote => vote.userId === userId && vote.type === "downvote");
+
+                html += `
+                <div class="card mb-3" style="max-width: 740px">
+                  <div class="row g-0">
+                    <div class="col-md-2 d-flex flex-column align-items-center justify-content-center bg-light vote-section">
+                      <button class="btn ${hasUpvoted ? "btn-danger" : "btn-outline-danger"} btn-sm" 
+                        style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; padding: 0;" 
+                        onclick="vote('${answer._id}', 'upvote')">
+                   <i class="bi bi-caret-up-fill fs-4"></i>
+                </button>
+                <span class="fw-bold mt-1 mb-1">${answer.votecount}</span>
+                <button class="btn ${hasDownvoted ? "btn-secondary" : "btn-outline-secondary"} btn-sm" 
+                        style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; padding: 0;" 
+                        onclick="vote('${answer._id}', 'downvote')">
+                  <i class="bi bi-caret-down-fill fs-4"></i>
+                </button>
+                    </div>
+                    <div class="col-md-10">
+                      <div class="card-body">
+                        <h5 class="card-title d-flex justify-content-between align-items-center">
+                          <a href="/questions/${answer.questionId}">
+                            ${answer.questionDetails.title}
+                          </a>
+                          <div class="d-flex gap-2 ms-auto">
+                            <form action="/answers/${answer._id}/edit" method="GET">
+                              <button type="submit" class="btn btn-outline-warning btn-sm">Edit</button>
+                            </form>
+                            <form action="/answers/${answer._id}/delete" method="POST" onsubmit="return confirmDelete(event)">
+                              <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
+                            </form>
+                          </div>
+                        </h5>
+                        <p class="card-text">
+                          <strong>Your Answer:</strong>
+                          ${answer.body}
+                        </p>
+                        <div class="question-details">
+                          <img width="50px" height="50px"
+                            src="${answer.userDetails.profilePicture ? 'data:image/png;base64,' + answer.userDetails.profilePicture : '/images/default.jpg'}"
+                            class="question-img" />
+                          <div class="text-details">
+                            <p style="line-height: 1.1">
+                              <small class="text-body-secondary">
+                                Posted by
+                                <a href="/users/${answer.userDetails._id}/profile"><strong>${answer.userDetails.displayname}</strong></a><br />
+                                on <strong>${answer.formattedCreated}</strong>
+                              </small>
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                `;
+              });
+
+              $("#answers-container").html(html);
+            }
+          },
+          error: function (xhr, status, error) {
+            console.error("Error fetching answers:", error);
+            $("#answers-container").html("<p>Error loading answers.</p>");
+          }
+        });
+      }
+
+      // Initial fetch of answers when page loads
+      $(document).ready(function () {
+        fetchAnswers(); // Fetch answers as soon as the page is loaded
+      });
+
+      // Decode JWT token to get user information
+      function parseJwt(token) {
+        return JSON.parse(atob(token.split(".")[1]));
+      }
+    </script>
+  </body>
+
+</html>

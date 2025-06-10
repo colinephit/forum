@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html>
+
+<%- include("head", {title: 'Forum' }) %>
+
+  <body>
+    <div id="outer">
+      <%- include('navbar', {user: user}) %>
+        <main id="content">
+          <section id="primaryContentContainer">
+            <article id="primaryContent">
+              <div class="card mb-3" style="max-width: 740px">
+                <div class="row g-0">
+                  <div
+                    class="col-md-2 d-flex flex-column align-items-center justify-content-center bg-light vote-section">
+                    <!-- Upvote Form -->
+                    <form action="/questions/vote/<%= question._id %>" method="POST" style="display:inline;">
+                      <input type="hidden" name="voteType" value="upvote">
+                      <button type="submit"
+                        class="btn <%= Array.isArray(question.votes) && question.votes.some(v => v.userId.toString() === currentUserId && v.type === 'upvote') ? 'btn-danger btn-sm' : 'btn-outline-danger btn-sm' %>"
+                        style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; padding: 0;">
+                        <i class="bi bi-caret-up-fill fs-4"></i>
+                      </button>
+                    </form>
+
+                    <!-- Vote Count -->
+                    <span class="fw-bold mt-1 mb-1">
+                      <%= question.votecount %>
+                    </span>
+
+                    <!-- Downvote Form -->
+                    <form action="/questions/vote/<%= question._id %>" method="POST" style="display:inline;">
+                      <input type="hidden" name="voteType" value="downvote">
+                      <button type="submit"
+                        class="btn <%= Array.isArray(question.votes) && question.votes.some(v => v.userId.toString() === currentUserId && v.type === 'downvote') ? 'btn-secondary btn-sm' : 'btn-outline-secondary btn-sm' %>"
+                        style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; padding: 0;">
+                        <i class="bi bi-caret-down-fill fs-4"></i>
+                      </button>
+                    </form>
+                  </div>
+                  <div class="col-md-10">
+                    <div class="card-body">
+                      <h5 class="card-title d-flex justify-content-between align-items-center"">
+                      <%= question.title %>
+                        <% if (question.userDetails._id==currentUserId) { %>
+                          <div class=" d-flex gap-2 ms-auto">
+                        <form action="/questions/<%= question._id %>/edit" method="GET">
+                          <button style="margin-left: 2px;" type="submit"
+                            class="btn btn-outline-warning btn-sm">Edit</button>
+                        </form>
+
+                        <form action="/questions/<%= question._id %>/delete" method="POST"
+                          onsubmit="return confirmDelete(event)">
+                          <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
+                        </form>
+                    </div>
+                    <% } %>
+                      </h5>
+
+                      <p class="card-text">
+                        <%= question.body %>
+                      </p>
+                      <div class="card-text">
+                        <% question.tags.forEach(tag=> { %>
+                          <span class="badge text-bg-dark me-1">
+                            <%= tag %>
+                          </span>
+                          <% }) %>
+                      </div>
+                      <div class="question-details">
+                        <img width="50px" height="50px"
+                          src="<%= question.userDetails.profilePicture ? 'data:image/png;base64,' + question.userDetails.profilePicture : '/images/default.jpg' %>"
+                          class="question-img" />
+                        <div class="text-details">
+                          <p style="line-height: 1.1">
+                            <small class="text-body-secondary">
+                              Posted by
+                              <a href="/users/<%= question.userDetails._id%>/profile"><strong>
+                                  <%= question.userDetails.displayname %>
+                                </strong></a><br />
+                              on <strong>
+                                <%= question.formattedCreated %>
+                              </strong>
+                            </small>
+                          </p>
+                        </div>
+                      </div>
+                  </div>
+                </div>
+              </div>
+    </div>
+    <!-- answers -->
+    <div class="d-grid gap-2 mx-auto" style="width: 300px;">
+      <a href="/answers/add/<%= question._id %>" class="btn btn-danger">Post an Answer</a>
+    </div>
+    <br />
+    <br />
+    <h2>My Answers</h2>
+    <!-- prettier-ignore-start -->
+    <% if (myAnswers && myAnswers.length> 0) { %>
+      <% myAnswers.forEach(answer=> { %>
+        <div class="card mb-3" style="max-width: 740px">
+          <div class="row g-0">
+            <div class="col-md-2 d-flex flex-column align-items-center justify-content-center bg-light vote-section">
+              <form action="/answers/vote/<%= answer._id %>" method="POST">
+                <input type="hidden" name="voteType" value="upvote">
+                <button
+                  class="btn <%= Array.isArray(answer.votes) && answer.votes.some(v => v.userId.toString() === currentUserId && v.type === 'upvote') ? 'btn-danger btn-sm' : 'btn-outline-danger btn-sm' %>"
+                  style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; padding: 0;">
+                  <i class="bi bi-caret-up-fill fs-4"></i>
+                </button>
+              </form>
+
+              <span class="fw-bold mt-1 mb-1">
+                <%= answer.votecount %>
+              </span>
+
+              <form action="/answers/vote/<%= answer._id %>" method="POST">
+                <input type="hidden" name="voteType" value="downvote">
+                <button
+                  class="btn <%= Array.isArray(answer.votes) && answer.votes.some(v => v.userId.toString() === currentUserId && v.type === 'downvote') ? 'btn-secondary btn-sm' : 'btn-outline-secondary btn-sm' %>"
+                  style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; padding: 0;">
+                  <i class="bi bi-caret-down-fill fs-4"></i>
+                </button>
+              </form>
+            </div>
+            <div class="col-md-10">
+              <div class="card-body">
+                <p class="card-text">
+                  <%= answer.body %>
+                </p>
+                <div class="question-details">
+                  <img width="50px" height="50px"
+                    src="<%= answer.userDetails.profilePicture ? 'data:image/png;base64,' + answer.userDetails.profilePicture : '/images/default.jpg' %>"
+                    class="question-img" />
+                  <div class="text-details">
+                    <p style="line-height: 1.1">
+                      <small class="text-body-secondary">
+                        Posted by
+                        <a href="/users/<%= answer.userDetails._id%>/profile"><strong>
+                            <%= answer.userDetails.displayname %>
+                          </strong></a><br />
+                        on <strong>
+                          <%= answer.formattedCreated %>
+                        </strong>
+                      </small>
+                    </p>
+                  </div>
+                  <div class="d-flex gap-2 ms-auto">
+                    <form action="/answers/<%= answer._id %>/edit" method="GET">
+                      <button type="submit" class="btn btn-outline-warning btn-sm">Edit</button>
+                    </form>
+
+                    <form action="/answers/<%= answer._id %>/delete" method="POST"
+                      onsubmit="return confirmDelete(event)">
+                      <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
+                    </form>
+
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <% }) %>
+          <% } else { %>
+            <p>You have not answered this question.</p>
+            <% } %>
+              <!-- prettier-ignore-end -->
+              <h2>Other answers</h2>
+              <% if (answers && answers.length> 0) { %>
+                <% answers.forEach(answer=> { %>
+                  <div class="card mb-3" style="max-width: 740px">
+                    <div class="row g-0">
+                      <div
+                        class="col-md-2 d-flex flex-column align-items-center justify-content-center bg-light vote-section">
+                        <form action="/answers/vote/<%= answer._id %>" method="POST">
+                          <input type="hidden" name="voteType" value="upvote">
+                          <button
+                            class="btn <%= Array.isArray(answer.votes) && answer.votes.some(v => v.userId.toString() === currentUserId && v.type === 'upvote') ? 'btn-danger btn-sm' : 'btn-outline-danger btn-sm' %>"
+                            style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; padding: 0;">
+                            <i class="bi bi-caret-up-fill fs-4"></i>
+                          </button>
+                        </form>
+
+                        <span class="fw-bold mt-1 mb-1">
+                          <%= answer.votecount %>
+                        </span>
+
+                        <form action="/answers/vote/<%= answer._id %>" method="POST">
+                          <input type="hidden" name="voteType" value="downvote">
+                          <button
+                            class="btn <%= Array.isArray(answer.votes) && answer.votes.some(v => v.userId.toString() === currentUserId && v.type === 'downvote') ? 'btn-secondary btn-sm' : 'btn-outline-secondary btn-sm' %>"
+                            style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; padding: 0;">
+                            <i class="bi bi-caret-down-fill fs-4"></i>
+                          </button>
+                        </form>
+
+                      </div>
+                      <div class="col-md-10">
+                        <div class="card-body">
+                          <p class="card-text">
+                            <%= answer.body %>
+                          </p>
+                          <div class="question-details">
+                            <img width="50px"
+                              src="<%= answer.userDetails.profilePicture ? 'data:image/png;base64,' + answer.userDetails.profilePicture : '/images/default.jpg' %>"
+                              class="question-img" />
+                            <div class="text-details">
+                              <p style="line-height: 1.1">
+                                <small class="text-body-secondary">
+                                  Posted by
+                                  <a href="/users/<%= answer.userDetails._id%>/profile"><strong>
+                                      <%= answer.userDetails.displayname %>
+                                    </strong></a><br />
+                                  on <strong>
+                                    <%= answer.formattedCreated %>
+                                  </strong>
+                                </small>
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <% }) %>
+                    <% } else { %>
+                      <p>There are no other answers.</p>
+                      <% } %>
+                        </article>
+                        </section>
+                        <%- include('sidebar'); %>
+                          </main>
+                          </div>
+
+  </body>
+  <script>
+    function confirmDelete(event) {
+      if (!confirm("Are you sure you want to delete this answer? This action cannot be undone.")) {
+        event.preventDefault(); // Stop the form submission
+        return false;
+      }
+      return true; // Allow form submission if confirmed
+    }
+  </script>
+
+</html>

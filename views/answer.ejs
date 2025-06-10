@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+
+<%- include("head", {title: 'Forum' }) %>
+
+  <body>
+    <div id="outer">
+      <%- include(navbar, {user: user}) %>
+        <main id="content">
+          <section id="primaryContentContainer">
+            <article id="primaryContent">
+              <h1>
+                <%= question.title %>
+              </h1>
+              <p>
+                <%= question.body %>
+              </p>
+              <!-- prettier-ignore -->
+              <% let formAction=`/answers/add/${questionId}` ; let formLabel='Type your answer' ; if (typeof _id
+                !='undefined' ){ formAction=`/answers/${answerId}/edit`; formLabel='Edit Answer' ; } %>
+                <h3>
+                  <%= formLabel %>
+                </h3>
+
+                <form action="<%= formAction %>" method="POST">
+                  <div class="mb-3">
+                    <label for="body" class="form-label">Body</label>
+                    <textarea class="form-control" id="body" name="body" rows="5"
+                      required><%= typeof body !== 'undefined' ? body.trim() : '' %></textarea>
+
+                  </div>
+                  <button type="submit" class="btn btn-danger">Post Answer</button>
+                </form>
+            </article>
+          </section>
+          <%- include('sidebar'); %>
+        </main>
+    </div>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        document.getElementById("body").focus();
+      });
+    </script>
+  </body>
+
+</html>

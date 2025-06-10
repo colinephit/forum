@@ -1,0 +1,124 @@
+<header id="header" style="display: flex; align-items: center;">
+  <img height="60px" src="/images/faviconCopy.png" alt="Site Logo" style="margin-right: 10px;">
+  <h1 style="margin: 0; padding-left: 70px;"><a href="/">Q&A Forum</a></h1>
+</header>
+
+<body>
+  <nav id="menu">
+    <ul>
+      <li class="first">
+        <a href="/" id="home-link" accesskey="1">Home</a>
+      </li>
+      <li id="my-questions">
+        <a href="#" onclick="redirectMyQuestions()" id="questions-link" accesskey="2">My Questions</a>
+      </li>
+      <li id="my-answers">
+        <a href="#" onclick="redirectMyAnswers()" id="answers-link" accesskey="3">My Answers</a>
+      </li>
+      <li class="login" id="auth-links">
+        <a href="/users/login" id="login-link">Login</a>
+      </li>
+    </ul>
+  </nav>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const token = localStorage.getItem("accesstoken");
+
+      if (token) {
+        try {
+          const decodedToken = parseJwt(token);
+          const userId = decodedToken.userId;
+
+          // Instead of modifying innerHTML, update hrefs directly to avoid overwriting event listeners
+          document.getElementById("questions-link").setAttribute("href", `/questions/user/${userId}`);
+          document.getElementById("answers-link").setAttribute("href", `/answers/user/${userId}`);
+
+          document.getElementById("auth-links").innerHTML = `
+            <a href="/users/${userId}/profile" id="profile-link">My Profile</a>
+            <a href="#" onclick="logout()">Logout</a>
+          `;
+        } catch (err) {
+          console.error("Invalid token:", err);
+          localStorage.removeItem("accesstoken");
+        }
+      }
+
+      highlightActivePage();
+    });
+
+    function parseJwt(token) {
+      return JSON.parse(atob(token.split(".")[1]));
+    }
+
+    function logout() {
+      localStorage.removeItem("accesstoken");
+      window.location.href = "/users/login";
+    }
+
+    function redirectMyQuestions() {
+      const token = localStorage.getItem("accesstoken");
+
+      if (token) {
+        try {
+          const decodedToken = parseJwt(token);
+          console.log("googoo", decodedToken)
+          const userId = decodedToken.userId;
+          window.location.href = `/questions/user/${userId}`;
+        } catch (err) {
+          console.error("Invalid token:", err);
+          localStorage.removeItem("accesstoken");
+          window.location.href = "/users/login";
+        }
+      } else {
+        window.location.href = "/users/login";
+      }
+    }
+
+    function redirectMyAnswers() {
+      const token = localStorage.getItem("accesstoken");
+
+      if (token) {
+        try {
+          const decodedToken = parseJwt(token);
+          const userId = decodedToken.userId;
+          window.location.href = `/answers/user/${userId}`;
+        } catch (err) {
+          console.error("Invalid token:", err);
+          localStorage.removeItem("accesstoken");
+          window.location.href = "/users/login";
+        }
+      } else {
+        window.location.href = "/users/login";
+      }
+    }
+
+    function highlightActivePage() {
+      const path = window.location.pathname;
+
+      const links = {
+        "/": "home-link",
+        "/questions/user/": "questions-link",
+        "/answers/user/": "answers-link",
+        "/users/login": "login-link",
+        "/users/profile": "profile-link"
+      };
+
+      Object.keys(links).forEach(route => {
+        if (path.startsWith(route)) {
+          const linkElement = document.getElementById(links[route]);
+          if (linkElement) {
+            linkElement.classList.add("active");
+          }
+        }
+      });
+    }
+  </script>
+</body>
+
+<style>
+  .active {
+    font-weight: bold;
+    color: red;
+  }
+</style>
